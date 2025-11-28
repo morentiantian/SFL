@@ -1,0 +1,35 @@
+2025-10-09 16:09:00,840 - Client_1 - INFO - Client 1 initialized as a 'high' quality client, assigned to Edge 0 on cpu.
+2025-10-09 16:09:00,840 - Client_1 - INFO - Client 1 is ready and waiting at the barrier.
+2025-10-09 16:09:08,057 - Client_1 - INFO - Client 1 passed the barrier, starting main loop.
+2025-10-09 16:09:08,057 - Client_1 - INFO - Client 1 process started. Attempting persistent connection to Edge 0.
+2025-10-09 16:09:08,587 - Client_1 - INFO - Dataset reference not found, loading dataset locally...
+2025-10-09 16:09:10,588 - Client_1 - INFO - Persistent connection established with ('127.0.0.1', 8100). Standing by for tasks for the entire episode.
+2025-10-09 16:10:13,356 - Client_1 - INFO - Received task for GR 1 in FEDAVG mode after 0.19s of idle time.
+2025-10-09 16:10:13,357 - Client_1 - INFO - ==> Starting FedAvg interaction for GR 1. <==
+2025-10-09 16:10:13,431 - Client_1 - INFO - Creating new SGD optimizer for FedAvg with LR: 0.010000
+2025-10-09 16:10:13,432 - Client_1 - INFO - Starting local training for 48 batches...
+2025-10-09 16:10:50,266 - Client_1 - INFO - FedAvg model delta and KPIs successfully uploaded.
+2025-10-09 16:12:19,560 - Client_1 - INFO - Received task for GR 2 in FEDAVG mode after 0.16s of idle time.
+2025-10-09 16:12:19,561 - Client_1 - INFO - ==> Starting FedAvg interaction for GR 2. <==
+2025-10-09 16:12:19,621 - Client_1 - INFO - Creating new SGD optimizer for FedAvg with LR: 0.010000
+2025-10-09 16:12:19,623 - Client_1 - INFO - Starting local training for 48 batches...
+2025-10-09 16:12:52,886 - Client_1 - INFO - FedAvg model delta and KPIs successfully uploaded.
+2025-10-09 16:14:20,113 - Client_1 - INFO - Received task for GR 3 in FEDAVG mode after 0.17s of idle time.
+2025-10-09 16:14:20,113 - Client_1 - INFO - ==> Starting FedAvg interaction for GR 3. <==
+2025-10-09 16:14:20,175 - Client_1 - INFO - Creating new SGD optimizer for FedAvg with LR: 0.010000
+2025-10-09 16:14:20,177 - Client_1 - INFO - Starting local training for 48 batches...
+2025-10-09 16:14:52,551 - Client_1 - INFO - FedAvg model delta and KPIs successfully uploaded.
+2025-10-09 16:16:25,253 - Client_1 - INFO - Received task for GR 4 in FEDAVG mode after 0.15s of idle time.
+2025-10-09 16:16:25,253 - Client_1 - INFO - ==> Starting FedAvg interaction for GR 4. <==
+2025-10-09 16:16:25,313 - Client_1 - INFO - Creating new SGD optimizer for FedAvg with LR: 0.010000
+2025-10-09 16:16:25,314 - Client_1 - INFO - Starting local training for 48 batches...
+2025-10-09 16:17:01,614 - Client_1 - INFO - FedAvg model delta and KPIs successfully uploaded.
+2025-10-09 16:18:30,745 - Client_1 - INFO - Received task for GR 5 in FEDAVG mode after 0.15s of idle time.
+2025-10-09 16:18:30,746 - Client_1 - INFO - ==> Starting FedAvg interaction for GR 5. <==
+2025-10-09 16:18:30,808 - Client_1 - INFO - Creating new SGD optimizer for FedAvg with LR: 0.010000
+2025-10-09 16:18:30,809 - Client_1 - INFO - Starting local training for 48 batches...
+2025-10-09 16:19:03,515 - Client_1 - INFO - FedAvg model delta and KPIs successfully uploaded.
+2025-10-09 16:19:26,431 - Client_1 - WARNING - Connection with ('127.0.0.1', 8100) seems to be closed (received empty header).
+2025-10-09 16:19:26,431 - Client_1 - INFO - Connection gracefully closed by server, likely end of experiment. Client is shutting down.
+2025-10-09 16:19:26,432 - Client_1 - INFO - Client 1 process has terminated.
+2025-10-09 16:19:26,432 - Client_1 - INFO - Client process 1 terminating.

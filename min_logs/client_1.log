@@ -1,0 +1,20 @@
+2025-10-09 15:37:35,852 - Client_1 - INFO - Client 1 initialized as a 'high' quality client, assigned to Edge 0 on cpu.
+2025-10-09 15:37:35,853 - Client_1 - INFO - Client 1 is ready and waiting at the barrier.
+2025-10-09 15:37:43,296 - Client_1 - INFO - Client 1 passed the barrier, starting main loop.
+2025-10-09 15:37:43,296 - Client_1 - INFO - Client 1 process started. Attempting persistent connection to Edge 0.
+2025-10-09 15:37:43,840 - Client_1 - INFO - Dataset reference not found, loading dataset locally...
+2025-10-09 15:37:45,947 - Client_1 - INFO - Persistent connection established with ('127.0.0.1', 8100). Standing by for tasks for the entire episode.
+2025-10-09 15:38:49,975 - Client_1 - INFO - Received task for GR 1 in FEDAVG mode after 0.17s of idle time.
+2025-10-09 15:38:49,975 - Client_1 - INFO - ==> Starting FedAvg interaction for GR 1. <==
+2025-10-09 15:38:50,048 - Client_1 - INFO - Creating new SGD optimizer for FedAvg with LR: 0.010000
+2025-10-09 15:38:50,048 - Client_1 - INFO - Starting local training for 48 batches...
+2025-10-09 15:39:09,191 - Client_1 - INFO - FedAvg model delta and KPIs successfully uploaded.
+2025-10-09 15:40:39,856 - Client_1 - INFO - Received task for GR 2 in FEDAVG mode after 0.16s of idle time.
+2025-10-09 15:40:39,856 - Client_1 - INFO - ==> Starting FedAvg interaction for GR 2. <==
+2025-10-09 15:40:39,914 - Client_1 - INFO - Creating new SGD optimizer for FedAvg with LR: 0.010000
+2025-10-09 15:40:39,915 - Client_1 - INFO - Starting local training for 48 batches...
+2025-10-09 15:40:58,306 - Client_1 - INFO - FedAvg model delta and KPIs successfully uploaded.
+2025-10-09 15:41:21,242 - Client_1 - WARNING - Connection with ('127.0.0.1', 8100) seems to be closed (received empty header).
+2025-10-09 15:41:21,242 - Client_1 - INFO - Connection gracefully closed by server, likely end of experiment. Client is shutting down.
+2025-10-09 15:41:21,243 - Client_1 - INFO - Client 1 process has terminated.
+2025-10-09 15:41:21,243 - Client_1 - INFO - Client process 1 terminating.

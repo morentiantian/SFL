@@ -1,0 +1,20 @@
+2025-10-09 15:37:29,979 - Client_0 - INFO - Client 0 initialized as a 'medium' quality client, assigned to Edge 0 on cpu.
+2025-10-09 15:37:29,979 - Client_0 - INFO - Client 0 is ready and waiting at the barrier.
+2025-10-09 15:37:43,296 - Client_0 - INFO - Client 0 passed the barrier, starting main loop.
+2025-10-09 15:37:43,297 - Client_0 - INFO - Client 0 process started. Attempting persistent connection to Edge 0.
+2025-10-09 15:37:43,824 - Client_0 - INFO - Dataset reference not found, loading dataset locally...
+2025-10-09 15:37:45,952 - Client_0 - INFO - Persistent connection established with ('127.0.0.1', 8100). Standing by for tasks for the entire episode.
+2025-10-09 15:38:49,992 - Client_0 - INFO - Received task for GR 1 in FEDAVG mode after 0.18s of idle time.
+2025-10-09 15:38:49,993 - Client_0 - INFO - ==> Starting FedAvg interaction for GR 1. <==
+2025-10-09 15:38:50,076 - Client_0 - INFO - Creating new SGD optimizer for FedAvg with LR: 0.010000
+2025-10-09 15:38:50,078 - Client_0 - INFO - Starting local training for 48 batches...
+2025-10-09 15:39:09,366 - Client_0 - INFO - FedAvg model delta and KPIs successfully uploaded.
+2025-10-09 15:40:39,863 - Client_0 - INFO - Received task for GR 2 in FEDAVG mode after 0.16s of idle time.
+2025-10-09 15:40:39,863 - Client_0 - INFO - ==> Starting FedAvg interaction for GR 2. <==
+2025-10-09 15:40:39,924 - Client_0 - INFO - Creating new SGD optimizer for FedAvg with LR: 0.010000
+2025-10-09 15:40:39,925 - Client_0 - INFO - Starting local training for 48 batches...
+2025-10-09 15:40:58,496 - Client_0 - INFO - FedAvg model delta and KPIs successfully uploaded.
+2025-10-09 15:41:21,242 - Client_0 - WARNING - Connection with ('127.0.0.1', 8100) seems to be closed (received empty header).
+2025-10-09 15:41:21,242 - Client_0 - INFO - Connection gracefully closed by server, likely end of experiment. Client is shutting down.
+2025-10-09 15:41:21,243 - Client_0 - INFO - Client 0 process has terminated.
+2025-10-09 15:41:21,243 - Client_0 - INFO - Client process 0 terminating.

@@ -1,0 +1,51 @@
+2025-10-09 15:37:41,578 - EdgeServer-0 - INFO - Intelligent Edge Server process 0 starting...
+2025-10-09 15:37:43,178 - EdgeServer-0 - INFO - Created a local validation set with 5000 samples for reward calculation.
+2025-10-09 15:37:43,296 - EdgeServer-0 - INFO - Instance for Edge Server 0 initialized in 'FedAvg_Baseline' test mode.
+2025-10-09 15:37:43,296 - EdgeServer-0 - INFO - Edge Server 0 is ready and waiting at the barrier.
+2025-10-09 15:37:43,296 - EdgeServer-0 - INFO - Edge Server 0 passed the barrier, starting test execution.
+2025-10-09 15:37:43,297 - EdgeServer-0 - INFO - Edge 0: Successfully connected to Cloud at 127.0.0.1:9201
+2025-10-09 15:37:43,297 - EdgeServer-0 - INFO - Edge server 0 is now listening on 127.0.0.1:8100 for the 0 round.
+2025-10-09 15:37:43,298 - EdgeServer-0 - INFO - Edge 0: [Persistent Connection Phase] Accepting connections for the entire episode...
+2025-10-09 15:37:43,298 - EdgeServer-0 - INFO - Waiting for all 2 assigned clients to connect (timeout: 120s)...
+2025-10-09 15:37:45,830 - EdgeServer-0 - INFO - Connection window closed. Waiting for 2 handshake threads to complete...
+2025-10-09 15:37:45,953 - EdgeServer-0 - INFO - Edge server 0 is closing its main listening socket.
+2025-10-09 15:37:45,953 - EdgeServer-0 - INFO - All 2 clients are now persistently connected.
+2025-10-09 15:37:45,953 - EdgeServer-0 - INFO - 
+[Edge 0] === Starting Global Round [1/2] ===
+2025-10-09 15:38:49,799 - EdgeServer-0 - INFO - Edge 0: Evaluated baseline on validation set. Loss: 4.8163
+2025-10-09 15:38:49,799 - EdgeServer-0 - INFO - Edge 0: Starting SFL phase for GR 1, budget f_g_k=1
+2025-10-09 15:38:49,799 - EdgeServer-0 - INFO - Requesting status updates from all connected clients...
+2025-10-09 15:38:49,808 - EdgeServer-0 - INFO - Finished collecting status updates from clients.
+2025-10-09 15:38:49,808 - EdgeServer-0 - INFO - Mapped clients to agent slots: [1, 0, None, None, None]
+2025-10-09 15:39:09,485 - EdgeServer-0 - INFO - [Aggregate] Performing FedAvg aggregation for model deltas.
+2025-10-09 15:39:09,557 - EdgeServer-0 - INFO - Successfully aggregated 2 model deltas using FedAvg.
+2025-10-09 15:39:09,557 - EdgeServer-0 - INFO - Applying aggregated delta to the initial model to form the final updated model for evaluation.
+2025-10-09 15:39:09,567 - EdgeServer-0 - INFO - Edge interaction phase completed for GR 1.
+2025-10-09 15:39:31,348 - EdgeServer-0 - INFO - Edge 0: Evaluated on validation set. Loss: 4.8163, Accuracy: 0.00%
+2025-10-09 15:39:31,349 - EdgeServer-0 - INFO - [Step]: 1 [Reward] Final: 0.0000 (Velo: 0.00, Bonus: 0.00, LossRwd: 0.0000, AccPenalty: -0.00, TimePenalty: -0.0000, CostPenalty: -0.0000) | Loss: 4.8163 | Acc: 0.00% (Best: 0.00%)
+2025-10-09 15:39:31,349 - EdgeServer-0 - INFO - MAPPO reward for this round: 0.0000
+2025-10-09 15:39:31,350 - EdgeServer-0 - INFO - Aggregated KPIs from 2 clients for this round.
+2025-10-09 15:39:31,419 - EdgeServer-0 - INFO - Edge 0: Final report sent to cloud.
+2025-10-09 15:39:31,419 - EdgeServer-0 - INFO - Edge 0: Waiting for 'ROUND_COMPLETE' signal from cloud...
+2025-10-09 15:39:31,524 - EdgeServer-0 - INFO - 
+[Edge 0] === Starting Global Round [2/2] ===
+2025-10-09 15:40:39,676 - EdgeServer-0 - INFO - Edge 0: Evaluated baseline on validation set. Loss: 4.8163
+2025-10-09 15:40:39,676 - EdgeServer-0 - INFO - Edge 0: Starting SFL phase for GR 2, budget f_g_k=1
+2025-10-09 15:40:39,676 - EdgeServer-0 - INFO - Requesting status updates from all connected clients...
+2025-10-09 15:40:39,699 - EdgeServer-0 - INFO - Finished collecting status updates from clients.
+2025-10-09 15:40:39,700 - EdgeServer-0 - INFO - Mapped clients to agent slots: [1, 0, None, None, None]
+2025-10-09 15:40:58,578 - EdgeServer-0 - INFO - [Aggregate] Performing FedAvg aggregation for model deltas.
+2025-10-09 15:40:58,614 - EdgeServer-0 - INFO - Successfully aggregated 2 model deltas using FedAvg.
+2025-10-09 15:40:58,615 - EdgeServer-0 - INFO - Applying aggregated delta to the initial model to form the final updated model for evaluation.
+2025-10-09 15:40:58,621 - EdgeServer-0 - INFO - Edge interaction phase completed for GR 2.
+2025-10-09 15:41:21,100 - EdgeServer-0 - INFO - Edge 0: Evaluated on validation set. Loss: 4.8163, Accuracy: 0.00%
+2025-10-09 15:41:21,100 - EdgeServer-0 - INFO - [Step]: 2 [Reward] Final: 0.0000 (Velo: 0.00, Bonus: 0.00, LossRwd: 0.0000, AccPenalty: -0.00, TimePenalty: -0.0000, CostPenalty: -0.0000) | Loss: 4.8163 | Acc: 0.00% (Best: 0.00%)
+2025-10-09 15:41:21,100 - EdgeServer-0 - INFO - MAPPO reward for this round: 0.0000
+2025-10-09 15:41:21,101 - EdgeServer-0 - INFO - Aggregated KPIs from 2 clients for this round.
+2025-10-09 15:41:21,152 - EdgeServer-0 - INFO - Edge 0: Final report sent to cloud.
+2025-10-09 15:41:21,152 - EdgeServer-0 - INFO - Edge 0: Waiting for 'ROUND_COMPLETE' signal from cloud...
+2025-10-09 15:41:21,242 - EdgeServer-0 - INFO - --- Edge 0 completed all 2 test rounds ---
+2025-10-09 15:41:21,242 - EdgeServer-0 - INFO - Shutting down server for Edge 0...
+2025-10-09 15:41:21,242 - EdgeServer-0 - INFO - Edge 0: Disconnecting all (2) clients to signal end of round.
+2025-10-09 15:41:21,242 - EdgeServer-0 - INFO - Server for Edge 0 has been shut down.
+2025-10-09 15:41:21,242 - EdgeServer-0 - INFO - Edge Server process 0 is terminating.

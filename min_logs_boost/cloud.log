@@ -1,0 +1,98 @@
+2025-10-09 16:29:25,242 - CloudProcess - INFO - Cloud process starting...
+2025-10-09 16:29:25,242 - CloudProcess.HWA_Manager - INFO - HWA Manager initialized with weights(sim=1.0, data=0.2)
+2025-10-09 16:29:25,242 - CloudProcess.HeuristicCoordinator - INFO - Coordinator initialized in Non-IID mode with dynamic mu.
+2025-10-09 16:29:25,242 - CloudProcess.HeuristicCoordinator - INFO - Initial mu = 0.1, Divergence Target = 4.0
+2025-10-09 16:29:25,242 - CloudProcess.CloudTimeSyncAgent - INFO - CloudTimeSyncAgent (efficiency-based) initialized for f_g_k decisions.
+2025-10-09 16:29:25,329 - CloudProcess.CloudServer - INFO - Cloud model 'resnet18' initialized on cpu
+2025-10-09 16:29:25,329 - CloudProcess.CloudServer - INFO - Initialized persistent ADAM optimizer on the cloud for server-side optimization.
+2025-10-09 16:29:25,344 - CloudProcess.CloudServer - INFO - Initialized CosineAnnealingLR scheduler for client learning rate over 10 rounds.
+2025-10-09 16:29:26,788 - CloudProcess.CloudServer - INFO - CloudServer components initialized.
+2025-10-09 16:29:26,795 - CloudProcess.CloudServer - INFO - [Cloud] Listening on 127.0.0.1:9202 for 1 edges...
+2025-10-09 16:29:41,390 - CloudProcess.CloudServer - INFO - [Cloud] Handshake successful with Edge 0 from ('127.0.0.1', 51502).
+2025-10-09 16:29:41,390 - CloudProcess.CloudServer - INFO - [Cloud] All 1 edges connected.
+2025-10-09 16:29:41,390 - CloudProcess.CloudServer - INFO - [Cloud] Starting SFL test process for 10 rounds.
+2025-10-09 16:29:41,390 - CloudProcess.CloudServer - INFO - 
+[Cloud] === Starting Global Round 1/10 ===
+2025-10-09 16:30:22,854 - CloudProcess.CloudServer - INFO - [Cloud][Eval] Round 1 - Test Loss: 2.4582, Accuracy: 10.00%
+2025-10-09 16:30:22,856 - CloudProcess.CloudServer - INFO - [Cloud] Current SFL learning rate for clients is 0.048776
+2025-10-09 16:30:22,856 - CloudProcess.CloudServer - INFO - [Cloud] Distributing tasks to 1 edges: [0]
+2025-10-09 16:32:10,619 - CloudProcess.CloudServer - INFO - Successfully aggregated edge deltas from 1 edges.
+2025-10-09 16:32:10,626 - CloudProcess.CloudServer - INFO - [Cloud] Round 1 finished. Time: 149.24s, Test Acc: 10.00%
+2025-10-09 16:32:10,626 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...
+2025-10-09 16:32:10,626 - CloudProcess.CloudServer - INFO - 
+[Cloud] === Starting Global Round 2/10 ===
+2025-10-09 16:32:52,485 - CloudProcess.CloudServer - INFO - [Cloud][Eval] Round 2 - Test Loss: 2.4582, Accuracy: 10.00%
+2025-10-09 16:32:52,485 - CloudProcess.CloudServer - INFO - [Cloud] Current SFL learning rate for clients is 0.045226
+2025-10-09 16:32:52,485 - CloudProcess.CloudServer - INFO - [Cloud] Distributing tasks to 1 edges: [0]
+2025-10-09 16:34:38,714 - CloudProcess.CloudServer - INFO - Successfully aggregated edge deltas from 1 edges.
+2025-10-09 16:34:38,721 - CloudProcess.CloudServer - INFO - [Cloud] Round 2 finished. Time: 148.09s, Test Acc: 10.00%
+2025-10-09 16:34:38,721 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...
+2025-10-09 16:34:38,721 - CloudProcess.CloudServer - INFO - 
+[Cloud] === Starting Global Round 3/10 ===
+2025-10-09 16:35:20,196 - CloudProcess.CloudServer - INFO - [Cloud][Eval] Round 3 - Test Loss: 2.4582, Accuracy: 10.00%
+2025-10-09 16:35:20,196 - CloudProcess.CloudServer - INFO - [Cloud] Current SFL learning rate for clients is 0.039695
+2025-10-09 16:35:20,196 - CloudProcess.CloudServer - INFO - [Cloud] Distributing tasks to 1 edges: [0]
+2025-10-09 16:37:05,365 - CloudProcess.CloudServer - INFO - Successfully aggregated edge deltas from 1 edges.
+2025-10-09 16:37:05,372 - CloudProcess.CloudServer - INFO - [Cloud] Round 3 finished. Time: 146.65s, Test Acc: 10.00%
+2025-10-09 16:37:05,372 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...
+2025-10-09 16:37:05,372 - CloudProcess.CloudServer - INFO - 
+[Cloud] === Starting Global Round 4/10 ===
+2025-10-09 16:37:46,672 - CloudProcess.CloudServer - INFO - [Cloud][Eval] Round 4 - Test Loss: 2.4582, Accuracy: 10.00%
+2025-10-09 16:37:46,672 - CloudProcess.CloudServer - INFO - [Cloud] Current SFL learning rate for clients is 0.032726
+2025-10-09 16:37:46,672 - CloudProcess.CloudServer - INFO - [Cloud] Distributing tasks to 1 edges: [0]
+2025-10-09 16:39:33,627 - CloudProcess.CloudServer - INFO - Successfully aggregated edge deltas from 1 edges.
+2025-10-09 16:39:33,634 - CloudProcess.CloudServer - INFO - [Cloud] Round 4 finished. Time: 148.26s, Test Acc: 10.00%
+2025-10-09 16:39:33,634 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...
+2025-10-09 16:39:33,635 - CloudProcess.CloudServer - INFO - 
+[Cloud] === Starting Global Round 5/10 ===
+2025-10-09 16:40:15,224 - CloudProcess.CloudServer - INFO - [Cloud][Eval] Round 5 - Test Loss: 2.4582, Accuracy: 10.00%
+2025-10-09 16:40:15,225 - CloudProcess.CloudServer - INFO - [Cloud] Current SFL learning rate for clients is 0.025001
+2025-10-09 16:40:15,225 - CloudProcess.CloudServer - INFO - [Cloud] Distributing tasks to 1 edges: [0]
+2025-10-09 16:42:08,386 - CloudProcess.CloudServer - INFO - Successfully aggregated edge deltas from 1 edges.
+2025-10-09 16:42:08,394 - CloudProcess.CloudServer - INFO - [Cloud] Round 5 finished. Time: 154.76s, Test Acc: 10.00%
+2025-10-09 16:42:08,394 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...
+2025-10-09 16:42:08,394 - CloudProcess.CloudServer - INFO - 
+[Cloud] === Starting Global Round 6/10 ===
+2025-10-09 16:42:49,433 - CloudProcess.CloudServer - INFO - [Cloud][Eval] Round 6 - Test Loss: 2.4582, Accuracy: 10.00%
+2025-10-09 16:42:49,434 - CloudProcess.CloudServer - INFO - [Cloud] Current SFL learning rate for clients is 0.017275
+2025-10-09 16:42:49,434 - CloudProcess.CloudServer - INFO - [Cloud] Distributing tasks to 1 edges: [0]
+2025-10-09 16:44:37,997 - CloudProcess.CloudServer - INFO - Successfully aggregated edge deltas from 1 edges.
+2025-10-09 16:44:38,003 - CloudProcess.CloudServer - INFO - [Cloud] Round 6 finished. Time: 149.61s, Test Acc: 10.00%
+2025-10-09 16:44:38,004 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...
+2025-10-09 16:44:38,004 - CloudProcess.CloudServer - INFO - 
+[Cloud] === Starting Global Round 7/10 ===
+2025-10-09 16:45:19,856 - CloudProcess.CloudServer - INFO - [Cloud][Eval] Round 7 - Test Loss: 2.4582, Accuracy: 10.00%
+2025-10-09 16:45:19,856 - CloudProcess.CloudServer - INFO - [Cloud] Current SFL learning rate for clients is 0.010306
+2025-10-09 16:45:19,856 - CloudProcess.CloudServer - INFO - [Cloud] Distributing tasks to 1 edges: [0]
+2025-10-09 16:47:09,217 - CloudProcess.CloudServer - INFO - Successfully aggregated edge deltas from 1 edges.
+2025-10-09 16:47:09,224 - CloudProcess.CloudServer - INFO - [Cloud] Round 7 finished. Time: 151.22s, Test Acc: 10.00%
+2025-10-09 16:47:09,224 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...
+2025-10-09 16:47:09,224 - CloudProcess.CloudServer - INFO - 
+[Cloud] === Starting Global Round 8/10 ===
+2025-10-09 16:47:50,813 - CloudProcess.CloudServer - INFO - [Cloud][Eval] Round 8 - Test Loss: 2.4582, Accuracy: 10.00%
+2025-10-09 16:47:50,813 - CloudProcess.CloudServer - INFO - [Cloud] Current SFL learning rate for clients is 0.004775
+2025-10-09 16:47:50,814 - CloudProcess.CloudServer - INFO - [Cloud] Distributing tasks to 1 edges: [0]
+2025-10-09 16:49:36,074 - CloudProcess.CloudServer - INFO - Successfully aggregated edge deltas from 1 edges.
+2025-10-09 16:49:36,081 - CloudProcess.CloudServer - INFO - [Cloud] Round 8 finished. Time: 146.86s, Test Acc: 10.00%
+2025-10-09 16:49:36,081 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...
+2025-10-09 16:49:36,081 - CloudProcess.CloudServer - INFO - 
+[Cloud] === Starting Global Round 9/10 ===
+2025-10-09 16:50:17,155 - CloudProcess.CloudServer - INFO - [Cloud][Eval] Round 9 - Test Loss: 2.4582, Accuracy: 10.00%
+2025-10-09 16:50:17,155 - CloudProcess.CloudServer - INFO - [Cloud] Current SFL learning rate for clients is 0.001225
+2025-10-09 16:50:17,155 - CloudProcess.CloudServer - INFO - [Cloud] Distributing tasks to 1 edges: [0]
+2025-10-09 16:52:15,342 - CloudProcess.CloudServer - INFO - Successfully aggregated edge deltas from 1 edges.
+2025-10-09 16:52:15,350 - CloudProcess.CloudServer - INFO - [Cloud] Round 9 finished. Time: 159.27s, Test Acc: 10.00%
+2025-10-09 16:52:15,350 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...
+2025-10-09 16:52:15,350 - CloudProcess.CloudServer - INFO - 
+[Cloud] === Starting Global Round 10/10 ===
+2025-10-09 16:52:56,140 - CloudProcess.CloudServer - INFO - [Cloud][Eval] Round 10 - Test Loss: 2.4582, Accuracy: 10.00%
+2025-10-09 16:52:56,141 - CloudProcess.CloudServer - INFO - [Cloud] Current SFL learning rate for clients is 0.000001
+2025-10-09 16:52:56,141 - CloudProcess.CloudServer - INFO - [Cloud] Distributing tasks to 1 edges: [0]
+2025-10-09 16:54:46,448 - CloudProcess.CloudServer - INFO - Successfully aggregated edge deltas from 1 edges.
+2025-10-09 16:54:46,455 - CloudProcess.CloudServer - INFO - [Cloud] Round 10 finished. Time: 151.10s, Test Acc: 10.00%
+2025-10-09 16:54:46,455 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...
+2025-10-09 16:54:46,455 - CloudProcess.CloudServer - INFO - [Cloud] Global training loop finished.
+2025-10-09 16:54:46,456 - CloudProcess.CloudServer - INFO - Shutting down Cloud Server...
+2025-10-09 16:54:46,456 - CloudProcess.CloudServer - INFO - [Cloud] Broadcasting stop signal to all edges.
+2025-10-09 16:54:47,472 - CloudProcess - INFO - Cloud process finished its run successfully.
+2025-10-09 16:54:47,473 - CloudProcess - INFO - Cloud process terminating.
