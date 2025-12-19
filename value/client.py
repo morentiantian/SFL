@@ -82,6 +82,10 @@ class Client(Communicator):
         self.bandwidth = 0
         self.distance = 0.0
         self.U: float = 0.0
+        
+        # [MHR-SFL] 存储上一轮分配的资源，用于计算本轮Utility
+        self.last_allocated_comp = None
+        self.last_allocated_bw = None
 
         # --- 客户端质量等级 ---
         num_clients = args.num_clients
@@ -356,6 +360,21 @@ class Client(Communicator):
         self.local_iterations = directive.get('local_iterations')
         self.split_point = directive.get('model_split_point')
         anchor_model_state = directive.get('anchor_model_for_pullback')
+        # 如果 directive 中包含算力/带宽分配，则采用该分配值覆盖本地的 cpu_frequency / bandwidth
+        comp_alloc_directive = directive.get('comp_alloc')
+        bw_alloc_directive = directive.get('bw_alloc')
+        if comp_alloc_directive is not None:
+            try:
+                self.cpu_frequency = float(comp_alloc_directive)
+                self.last_allocated_comp = self.cpu_frequency # [MHR-SFL] 记录分配值
+            except Exception:
+                self.logger.warning(f"Invalid comp_alloc in directive: {comp_alloc_directive}")
+        if bw_alloc_directive is not None:
+            try:
+                self.bandwidth = int(bw_alloc_directive)
+                self.last_allocated_bw = self.bandwidth # [MHR-SFL] 记录分配值
+            except Exception:
+                self.logger.warning(f"Invalid bw_alloc in directive: {bw_alloc_directive}")
         
         macro_policy = directive.get('macro_policy_package', {})
         self.mu = macro_policy.get('mu', 0.0)
@@ -549,6 +568,13 @@ class Client(Communicator):
             self.channel_quality = round(random.uniform(300, 500), 2)
             self.bandwidth = random.randint(20, 30)
             
+        # [MHR-SFL] 如果存在上一轮的分配记录，则使用分配值覆盖随机生成的物理值，用于计算Utility
+        # 这意味着Utility反映的是"如果继续使用上次分配的资源，预期的效用"
+        if self.last_allocated_comp is not None:
+            self.cpu_frequency = self.last_allocated_comp
+        if self.last_allocated_bw is not None:
+            self.bandwidth = self.last_allocated_bw
+            
         self.distance = round(random.uniform(50, MAX_DISTANCE), 1)
         self.evaluate_training_utility()
         
@@ -598,6 +624,8 @@ class Client(Communicator):
         diversity_score = 1 + entropy
         data_size_score = len(self.full_local_data_indices) / MAX_DATASET_SIZE
         U_data = diversity_score * data_size_score
+        num_classes = self.args.output_channels
+        U_data = U_data / (1.0 + np.log2(num_classes))
         
         compute_score = (self.cpu_frequency / MAX_CPU_FREQUENCY) ** GAMMA_CPU
         comm_score = (self.channel_quality / MAX_CHANNEL_QUALITY) ** ETA_CHANNEL
@@ -607,7 +635,11 @@ class Client(Communicator):
         age_of_update = self.current_global_round - self.last_round_participated
         U_AoU = 1 / (1 + max(0, age_of_update))
         
-        self.U = U_data * U_sys * U_AoU
+        w_data = getattr(self.args, 'w_data', 0.4)
+        w_sys = getattr(self.args, 'w_sys', 0.4)
+        w_aou = getattr(self.args, 'w_aou', 0.2)
+        
+        self.U = w_data * U_data + w_sys * U_sys + w_aou * U_AoU
 
     def close_connection(self):
         # 安全地关闭网络连接

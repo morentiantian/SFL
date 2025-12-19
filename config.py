@@ -20,7 +20,7 @@ def args_parser():
     group.add_argument('--cloud_port', type=int, default=9100, help="云服务器监听边缘连接的端口")
     group.add_argument('--server_port_base', type=int, default=7000, help="边缘服务器监听客户端连接的起始端口基址")
     group.add_argument('--test_policy', type=str, default='HAC-SFL',
-                       choices=['HAC-SFL', 'MADRL-SFL', 'ARES', 'RAF-SFL', 'SplitFed', 'FedAvg_Baseline'],
+                       choices=['HAC-SFL', 'MADRL-SFL', 'MHR-SFL', 'ARES', 'RAF-SFL', 'SplitFed', 'FedAvg_Baseline'],
                        help="选择要执行的对比测试策略")
 
     # ========================= 2. 数据集与模型参数 (Dataset & Model) =========================
@@ -52,6 +52,7 @@ def args_parser():
     group.add_argument('--divergence_target', type=float, default=4.0, help="[HAC-SFL] 模型散度的目标阈值")
     group.add_argument('--w_similarity', type=float, default=1.0, help="[HAC-SFL] HWA中模型相似度的权重")
     group.add_argument('--w_data_size', type=float, default=0.2, help="[HAC-SFL] HWA中数据量的权重")
+    group.add_argument('--w_perf', type=float, default=5.0, help="[HAC-SFL] 奖励函数中性能(accuracy)的基准权重")
     group.add_argument('--alpha_anchor', type=float, default=0.5, help="[HAC-SFL] 锚点模型更新的平滑系数")
 
     # ========================= 6. MAPPO 环境与智能体 (MAPPO Env & Agent) =========================
@@ -64,6 +65,9 @@ def args_parser():
     group.add_argument("--use_centralized_V", action="store_false", default=True, help="是否使用中心化Critic进行训练")
     group.add_argument("--num_env_steps", type=int, default=1000000, help="[Training Only] 总环境步数")
     group.add_argument("--n_rollout_threads", type=int, default=4, help="[Training Only] 并行环境实例数 (应与num_edges匹配)")
+    group.add_argument("--n_training_threads", type=int, default=1, help="[Training Only] 用于PyTorch的训练线程数 (torch.set_num_threads)")
+    # MHR-SFL 专属：分配分箱个数（每个维度的离散等级数）
+    group.add_argument('--alloc_levels', type=int, default=3, help='[MHR-SFL] 算力/带宽分配的离散分箱数量')
     
     # ========================= 7. MAPPO 神经网络 (MAPPO Network) =========================
     group = parser.add_argument_group('MAPPO Network')
@@ -122,5 +126,15 @@ def args_parser():
     group.add_argument("--use_clipped_value_loss", action="store_false", default=True)
     group.add_argument("--use_popart", action="store_true", default=False)
     group.add_argument("--use_gae", action="store_false", default=True) 
+
+    # ========================= 11. 客户端效用参数 (Client Utility Parameters) =========================
+    group = parser.add_argument_group('Client Utility Parameters')
+    group.add_argument('--w_data', type=float, default=0.4, help="[Utility] 数据效用(U_data)的权重")
+    group.add_argument('--w_sys', type=float, default=0.4, help="[Utility] 系统效用(U_sys)的权重")
+    group.add_argument('--w_aou', type=float, default=0.2, help="[Utility] 信息年龄效用(U_AoU)的权重")
+
+    # ========================= 12. MHR-SFL 特定参数 (MHR-SFL Specific) =========================
+    group = parser.add_argument_group('MHR-SFL Specific')
+    group.add_argument('--proto_lambda', type=float, default=0.01, help="[MHR-SFL] 类原型正则化损失的系数 (lambda)")
 
     return parser

@@ -1,3 +1,0 @@
-global_round,test_accuracy,test_loss,round_time_s,avg_computation_time_s,avg_communication_time_s,avg_total_interaction_time_s,total_computation_energy_J,total_communication_energy_J,total_energy_consumption_J,avg_model_divergence
-1,0.0,nan,108.22387409210205,19.108916550001595,0.01,19.118916550001597,594.2933794003233,1.7247227053709115,0,0
-2,0.0,4.811743824768066,109.7168242931366,18.407629950001137,0.01,18.41762995000114,563.8636146495653,1.5175024697865167,0,0

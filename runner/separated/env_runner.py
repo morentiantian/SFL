@@ -142,7 +142,9 @@ class EnvRunner(Runner):
             action = _t2n(action)
             # rearrange action
             if self.envs.action_space[agent_id].__class__.__name__ == "MultiDiscrete":
-                for i in range(self.envs.action_space[agent_id].shape):
+                # 使用 nvec 来遍历每个离散分量，兼容 gymnasium 的 MultiDiscrete 接口
+                num_dims = len(self.envs.action_space[agent_id].nvec)
+                for i in range(num_dims):
                     uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i]]
                     if i == 0:
                         action_env = uc_action_env
@@ -260,7 +262,8 @@ class EnvRunner(Runner):
                 eval_action = eval_action.detach().cpu().numpy()
                 # rearrange action
                 if self.eval_envs.action_space[agent_id].__class__.__name__ == "MultiDiscrete":
-                    for i in range(self.eval_envs.action_space[agent_id].shape):
+                    num_dims = len(self.eval_envs.action_space[agent_id].nvec)
+                    for i in range(num_dims):
                         eval_uc_action_env = np.eye(self.eval_envs.action_space[agent_id].high[i] + 1)[
                             eval_action[:, i]
                         ]
@@ -346,7 +349,8 @@ class EnvRunner(Runner):
                     action = action.detach().cpu().numpy()
                     # rearrange action
                     if self.envs.action_space[agent_id].__class__.__name__ == "MultiDiscrete":
-                        for i in range(self.envs.action_space[agent_id].shape):
+                        num_dims = len(self.envs.action_space[agent_id].nvec)
+                        for i in range(num_dims):
                             uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i]]
                             if i == 0:
                                 action_env = uc_action_env

@@ -128,6 +128,9 @@ def mappo_main(all_args):
         device = torch.device("cpu")
         torch.set_num_threads(all_args.n_training_threads)
 
+    # 把计算得到的 device 回写到参数对象中，确保后续传入 EnvCore/EdgeServer 的 args 包含 device
+    all_args.device = device
+
     # 运行目录设置
     run_dir = Path(all_args.log_dir).parent
     

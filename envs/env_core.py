@@ -68,7 +68,13 @@ class EnvCore(gym.Env):
         self.local_iteration_options = [4, 8, 16, 24, 32, 64]
         edge_iter_dim = len(self.local_iteration_options)
         
-        self.action_space = [spaces.MultiDiscrete([cut_dim, edge_iter_dim]) for _ in range(self.num_agents)]
+        # 如果训练/评估为 MHR-SFL，需要在动作空间中加入算力/带宽分配的离散维度
+        if getattr(self.args, 'test_policy', None) == 'MHR-SFL':
+            alloc_levels = getattr(self.args, 'alloc_levels', 3)
+            self.action_space = [spaces.MultiDiscrete([cut_dim, edge_iter_dim, alloc_levels, alloc_levels]) for _ in range(self.num_agents)]
+        else:
+            self.action_space = [spaces.MultiDiscrete([cut_dim, edge_iter_dim]) for _ in range(self.num_agents)]
+
         self.logger.info(f"EnvCore (Test Aligned) Initialized. Obs dim: {self.obs_dim_per_agent}.")
 
     def set_mappo_policy(self, policy):
@@ -153,10 +159,22 @@ class EnvCore(gym.Env):
                 if client_id is not None and i < len(actions) and actions[i] is not None:
                     split_layer_index = int(actions[i][0])
                     local_iterations_index = int(actions[i][1])
-                    parsed_actions[client_id] = {
+                    entry = {
                         'split_layer': split_layer_index + 1,
                         'local_iterations': self.local_iteration_options[local_iterations_index]
                     }
+                    # 如果动作里包含算力/带宽分箱索引（MHR-SFL），同时传递这两个索引
+                    if len(actions[i]) >= 4:
+                        try:
+                            comp_idx = int(actions[i][2])
+                            bw_idx = int(actions[i][3])
+                            entry['comp_idx'] = comp_idx
+                            entry['bw_idx'] = bw_idx
+                        except Exception:
+                            # 如果解析失败，忽略额外维度（保持向后兼容）
+                            pass
+
+                    parsed_actions[client_id] = entry
             self.server.current_mappo_decisions = parsed_actions
 
             success, _ = self.server.receive_global_config_from_cloud()

@@ -49,6 +49,7 @@ trap cleanup INT QUIT TERM EXIT
 
 # --- 定义所有需要对比的算法策略 ---
 policies_to_test=('FedAvg_Baseline' 'SplitFed' 'ARES' 'RAF-SFL' 'MADRL-SFL' 'HAC-SFL')
+policies_to_test+=('MHR-SFL')
 
 # --- 端口管理 ---
 CLOUD_PORT_BASE=9100
@@ -79,7 +80,7 @@ if [ -n "$POLICY_ARG" ]; then
         --cloud_port=${CURRENT_CLOUD_PORT} --server_port_base=${CURRENT_EDGE_BASE_PORT} \
         ${IID_FLAG} --test_policy ${policy} ${OTHER_ARGS[*]}"
         
-    if [[ "$policy" == "HAC-SFL" || "$policy" == "MADRL-SFL" ]]; then
+    if [[ "$policy" == "HAC-SFL" || "$policy" == "MADRL-SFL" || "$policy" == "MHR-SFL" ]]; then
         if ! [[ " ${OTHER_ARGS[*]} " =~ " --model_dir " ]]; then
             CMD="$CMD --model_dir=${MODEL_DIR}"
         fi
@@ -108,7 +109,7 @@ else
             --model_name=${MODEL_NAME} --dataset=${DATASET} --output_channels=100 \
             ${IID_FLAG} --test_policy ${policy} ${OTHER_ARGS[*]}"
             
-        if [[ "$policy" == "HAC-SFL" || "$policy" == "MADRL-SFL" ]]; then
+        if [[ "$policy" == "HAC-SFL" || "$policy" == "MADRL-SFL" || "$policy" == "MHR-SFL" ]]; then
             if ! [[ " ${OTHER_ARGS[*]} " =~ " --model_dir " ]]; then
                 CMD="$CMD --model_dir=${MODEL_DIR}"
             fi

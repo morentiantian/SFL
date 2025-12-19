@@ -75,8 +75,14 @@ class EdgeServer(Communicator):
         self.persistent_local_model_state: Optional[Dict[str, Any]] = None
         self.aggregated_edge_model_delta: Optional[Dict[str, Any]] = None
         
+        # [MHR-SFL] 原型回放机制相关
+        self.global_prototypes: Optional[Dict[int, torch.Tensor]] = None
+        self.aggregated_local_prototypes: Optional[Dict[int, torch.Tensor]] = None
+        
         # --- MAPPO & 决策相关 (由 client_data_lock 保护) ---
         self.current_mappo_decisions: Dict[int, Dict[str, Any]] = {}
+        # 存储上一轮为每个客户端下发的算力/带宽分配（用于观测替换）
+        self.prev_allocations: Dict[int, Dict[str, float]] = {}
         
         # --- 线程安全的结果缓冲区 ---
         self.sfl_interaction_results_buffer: List[Dict[str, Any]] = []
@@ -113,7 +119,7 @@ class EdgeServer(Communicator):
         self.mappo_policy = None
         self.rnn_states = None
 
-        if self.test_policy in ['HAC-SFL', 'MADRL-SFL']:
+        if self.test_policy in ['HAC-SFL', 'MADRL-SFL', 'MHR-SFL']:
             self.logger.info(f"Policy is {self.test_policy}, initializing built-in MAPPO agent...")
             
             # 定义与训练时一致的观测和动作空间
@@ -123,7 +129,12 @@ class EdgeServer(Communicator):
 
             obs_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
             share_obs_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.args.num_agents * obs_dim,), dtype=np.float32)
-            act_space = spaces.MultiDiscrete([act_dim_split, act_dim_iters])
+            # 如果是 MHR-SFL, 在动作空间中为算力与带宽分配加入两个离散维度（每档3个层次）
+            if self.test_policy == 'MHR-SFL':
+                alloc_levels = 3
+                act_space = spaces.MultiDiscrete([act_dim_split, act_dim_iters, alloc_levels, alloc_levels])
+            else:
+                act_space = spaces.MultiDiscrete([act_dim_split, act_dim_iters])
 
             # 初始化策略网络
             self.mappo_policy = Policy(self.args, obs_space, share_obs_space, act_space, device=self.device)
@@ -384,7 +395,7 @@ class EdgeServer(Communicator):
             return {}, 'none'
 
         # ======================= [核心修改 2: 集成 MAPPO 决策] =======================
-        if policy in ['MADRL-SFL', 'HAC-SFL']:
+        if policy in ['MADRL-SFL', 'HAC-SFL', 'MHR-SFL']:
             self.logger.info(f"[{policy} mode] Using built-in MAPPO agent for decision making...")
             
             obs_data, share_obs_data, masks_data = self._get_obs_for_mappo()
@@ -400,14 +411,42 @@ class EdgeServer(Communicator):
                 self.rnn_states = _t2n(next_rnn_states.reshape(1, self.args.num_agents, self.args.recurrent_N, self.args.hidden_size))
 
             actions = _t2n(actions)
+            # 定义按 quality_tier 划分的离散等级映射（每档3个层次）
+            cpu_levels = {
+                'low': [0.5, 1.0, 1.5],
+                'medium': [1.5, 2.0, 2.5],
+                'high': [2.5, 3.0, 3.5]
+            }
+            bw_levels = {
+                'low': [5, 7, 10],
+                'medium': [10, 15, 20],
+                'high': [20, 25, 30]
+            }
+
             for i, uav_id in enumerate(participating_uav_ids):
                 if i < len(actions):
                     split_layer_idx = int(actions[i][0])
                     local_iters_idx = int(actions[i][1])
-                    decisions[uav_id] = {
+                    decision = {
                         'split_layer': split_layer_idx + 1,
                         'local_iterations': self.local_iteration_options[local_iters_idx]
                     }
+                    # 如果是 MHR-SFL, 请解析并映射离散的算力/带宽等级
+                    if policy == 'MHR-SFL' and actions.shape[1] >= 4:
+                        comp_idx = int(actions[i][2])
+                        bw_idx = int(actions[i][3])
+                        client_stats = self.client_raw_stats.get(uav_id, {})
+                        tier = client_stats.get('quality_tier', 'medium')
+                        cpu_choice_list = cpu_levels.get(tier, cpu_levels['medium'])
+                        bw_choice_list = bw_levels.get(tier, bw_levels['medium']) if isinstance(bw_levels.get(tier), list) else bw_levels['medium']
+                        comp_alloc = float(cpu_choice_list[max(0, min(len(cpu_choice_list)-1, comp_idx))])
+                        bw_alloc = float(bw_choice_list[max(0, min(len(bw_choice_list)-1, bw_idx))])
+                        decision['comp_alloc'] = comp_alloc
+                        decision['bw_alloc'] = bw_alloc
+                        # 记录为下一轮的观测使用
+                        self.prev_allocations[uav_id] = {'comp': comp_alloc, 'bw': bw_alloc}
+
+                    decisions[uav_id] = decision
             return decisions, interaction_mode
         # ==============================================================================
         
@@ -477,7 +516,9 @@ class EdgeServer(Communicator):
             for uav_id in participants:
                 if uav_id in connected_clients and uav_id in decisions:
                     client_sock_ref = connected_clients[uav_id]
-                    thread_args = (uav_id, client_sock_ref, base_model_state, decisions[uav_id], results_queue)
+                    # 在 directive 中注入 comp_alloc / bw_alloc（如果决策里包含）
+                    dir_decision = dict(decisions[uav_id])
+                    thread_args = (uav_id, client_sock_ref, base_model_state, dir_decision, results_queue)
                     thread = threading.Thread(target=target_func, args=thread_args)
                     threads.append((thread, uav_id))
                     thread.start()
@@ -504,6 +545,12 @@ class EdgeServer(Communicator):
                         elif 'client_model' in result:
                             self.client_final_model_buffer[result['uav_id']] = result['client_model']
                             self.server_final_model_buffer[result['uav_id']] = result['server_model']
+                        
+                        if 'label_counts' in result:
+                            if result['uav_id'] not in self.client_raw_stats:
+                                self.client_raw_stats[result['uav_id']] = {}
+                            self.client_raw_stats[result['uav_id']]['label_counts'] = result['label_counts']
+
                         self.sfl_interaction_results_buffer.append(result)
                 else:
                     self.logger.warning(f"Client {client_id} reported failure: {result.get('error')}")
@@ -598,13 +645,18 @@ class EdgeServer(Communicator):
             server_model_part = sfl_params['server_model_part']
             optimizer = sfl_params['optimizer']
             
-            directive_to_client = self._create_sfl_directive(sfl_params, total_iterations)
+            directive_to_client = self._create_sfl_directive(sfl_params, total_iterations, decision)
             if not self.send_msg(client_sock, directive_to_client, 'MSG_TRAINING_DIRECTIVE_TO_CLIENT'):
                 raise ConnectionError("Failed to send SFL directive.")
             
             server_model_part.train()
             total_loss = 0.0
             scaler = GradScaler(enabled=(self.device.type == 'cuda'))
+            total_label_counts = {}
+            
+            # [MHR-SFL] 本地原型累加器
+            local_proto_sums = {}
+            local_proto_counts = {}
 
             for i in range(total_iterations):
                 msg_type, smashed_data_msg = self.recv_msg(client_sock, timeout=600.0)
@@ -615,11 +667,85 @@ class EdgeServer(Communicator):
                 label = smashed_data_msg['label'].to(self.device)
                 client_output.retain_grad()
                 
+                # 统计当前batch的类别分布 (Accumulate label counts for aggregation)
+                labels_cpu = label.cpu().numpy()
+                unique_labels, counts = np.unique(labels_cpu, return_counts=True)
+                for l, c in zip(unique_labels, counts):
+                    total_label_counts[int(l)] = total_label_counts.get(int(l), 0) + int(c)
+
                 optimizer.zero_grad(set_to_none=True)
                 with autocast(device_type=self.device.type, enabled=scaler.is_enabled()):
                     server_input = GraphBridge.apply(client_output)
-                    output_server = server_model_part(server_input.float())
-                    loss = nn.CrossEntropyLoss()(output_server, label)
+                    
+                    # [MHR-SFL] 特征提取与原型正则化
+                    features = None
+                    output_server = None
+                    
+                    if self.args.test_policy == 'MHR-SFL':
+                        # 尝试分离特征提取器和分类器
+                        modules = list(server_model_part.children())
+                        if len(modules) > 1:
+                            feature_extractor = nn.Sequential(*modules[:-1])
+                            classifier = modules[-1]
+                            features = feature_extractor(server_input.float())
+                            output_server = classifier(features)
+                        else:
+                            features = server_input.float()
+                            output_server = server_model_part(features)
+                    else:
+                        output_server = server_model_part(server_input.float())
+
+                    # [MHR-SFL] 动态计算类别权重 (Class-Balanced Loss)
+                    if self.args.test_policy == 'MHR-SFL':
+                        # ... (Existing CB Loss logic) ...
+                        # unique_labels, counts already calculated above
+                        
+                        # 获取总类别数 (从args中获取)
+                        num_classes = self.args.output_channels
+                        
+                        beta = 0.5 # beta \in (0, 1]
+                        class_counts = dict(zip(unique_labels, counts))
+                        denom = sum(float(class_counts[c]) ** (-beta) for c in unique_labels)
+                        weight_tensor = torch.ones(num_classes, device=self.device)
+                        
+                        for c, n_c in class_counts.items():
+                            w_c = (float(n_c) ** (-beta)) / denom
+                            weight_tensor[c] = w_c * len(unique_labels) 
+                            
+                        cls_loss = nn.CrossEntropyLoss(weight=weight_tensor)(output_server, label)
+                        
+                        # [MHR-SFL] 添加原型正则化损失
+                        reg_loss = 0.0
+                        if self.global_prototypes:
+                            batch_protos = []
+                            valid_mask = []
+                            for idx, y in enumerate(label):
+                                y_item = int(y.item())
+                                if y_item in self.global_prototypes:
+                                    batch_protos.append(self.global_prototypes[y_item])
+                                    valid_mask.append(idx)
+                            
+                            if batch_protos:
+                                batch_protos_tensor = torch.stack(batch_protos).to(self.device)
+                                selected_features = features[valid_mask]
+                                # 正则化系数 (从args获取，默认为0.01，防止掩盖主损失)
+                                lambda_proto = getattr(self.args, 'proto_lambda', 0.01)
+                                reg_loss = lambda_proto * nn.MSELoss()(selected_features, batch_protos_tensor)
+                        
+                        loss = cls_loss + reg_loss
+                        
+                        # [MHR-SFL] 累积本地原型
+                        features_detached = features.detach()
+                        for idx, y in enumerate(label):
+                            y_item = int(y.item())
+                            if y_item not in local_proto_sums:
+                                local_proto_sums[y_item] = torch.zeros_like(features_detached[idx])
+                                local_proto_counts[y_item] = 0
+                            local_proto_sums[y_item] += features_detached[idx]
+                            local_proto_counts[y_item] += 1
+                            
+                    else:
+                        loss = nn.CrossEntropyLoss()(output_server, label)
                 
                 scaler.scale(loss).backward()
                 scaler.unscale_(optimizer)
@@ -639,12 +765,22 @@ class EdgeServer(Communicator):
             
             if not self.send_msg(client_sock, {'status': 'acknowledged_standby'}, 'MSG_EDGE_ACK_TO_CLIENT'):
                 raise ConnectionError("Failed to send ACK to client.")
+            
+            # [MHR-SFL] 计算最终的本地原型 (Mean)
+            final_local_prototypes = {}
+            if self.args.test_policy == 'MHR-SFL':
+                for cls_id, sum_vec in local_proto_sums.items():
+                    count = local_proto_counts[cls_id]
+                    if count > 0:
+                        final_local_prototypes[cls_id] = sum_vec / count
 
             results_queue.put({
                 'uav_id': client_id, 'status': 'success',
                 'client_model': final_report['model_state_dict'], 'server_model': server_model_part.state_dict(),
                 'avg_loss': total_loss / total_iterations if total_iterations > 0 else 0,
-                'client_kpi_report': final_report.get('kpi_report', {})
+                'client_kpi_report': final_report.get('kpi_report', {}),
+                'label_counts': total_label_counts,
+                'local_prototypes': final_local_prototypes # [MHR-SFL]
             })
         except Exception as e:
             self.logger.warning(f"SFL thread for UAV {client_id} failed: {e}")
@@ -746,8 +882,14 @@ class EdgeServer(Communicator):
     def get_client_features_for_mappo(self, client_id: int) -> np.ndarray:
         stats = self.client_raw_stats.get(client_id, {})
         norm_data_size = stats.get('data_size', 0) / 5000.0
-        norm_comp_power = stats.get('comp_power', 0) / 3.5
-        norm_bandwidth = stats.get('bandwidth', 0) / 30.0
+        # 如果存在上一轮的分配，则用上一轮分配替代原始的 comp/bandwidth 观测
+        prev = self.prev_allocations.get(client_id)
+        if prev is not None:
+            norm_comp_power = prev.get('comp', stats.get('comp_power', 0)) / 3.5
+            norm_bandwidth = prev.get('bw', stats.get('bandwidth', 0)) / 30.0
+        else:
+            norm_comp_power = stats.get('comp_power', 0) / 3.5
+            norm_bandwidth = stats.get('bandwidth', 0) / 30.0
         norm_link_rate = stats.get('link_rate', 0) / 500.0
         norm_battery = stats.get('battery', 0)
         norm_distance = stats.get('distance', 0) / 500.0
@@ -782,13 +924,13 @@ class EdgeServer(Communicator):
             self.logger.error(f"Error preparing resources for split_point {split_point}: {e}", exc_info=True)
             return None
     
-    def _create_sfl_directive(self, sfl_params: Dict[str, Any], num_iterations: int) -> Dict[str, Any]:
+    def _create_sfl_directive(self, sfl_params: Dict[str, Any], num_iterations: int, decision: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         mu = self.macro_policy_package_from_cloud.get('mu', 0.0)
         split_anchor_state = None
         if self.anchor_model_state_from_cloud and mu > 0:
             client_key_map = sfl_params['key_maps']['client_key_map']
             split_anchor_state = OrderedDict((k, self.anchor_model_state_from_cloud[v].cpu()) for k, v in client_key_map.items() if v in self.anchor_model_state_from_cloud)
-        return {
+        directive = {
             'participate': True, 'training_mode': 'sfl',
             'model_split_point': sfl_params['split_layer'],
             'client_model_part_state_dict': sfl_params['client_model_part_state_dict'],
@@ -797,7 +939,49 @@ class EdgeServer(Communicator):
             'current_global_round': self.current_global_round,
             'sfl_lr': self.args.sfl_lr
         }
+        # 如果决策中包含算力/带宽分配，则下发给客户端用于本次交互
+        if decision is not None:
+            if 'comp_alloc' in decision:
+                directive['comp_alloc'] = decision['comp_alloc']
+            if 'bw_alloc' in decision:
+                directive['bw_alloc'] = decision['bw_alloc']
+        return directive
     
+    def _calculate_mhr_weights(self, uids: List[int]) -> List[float]:
+        # 1. Data Volume
+        data_sizes = np.array([self.client_raw_stats.get(uid, {}).get('data_size', 1) for uid in uids])
+        
+        # 2. Distribution Consistency
+        # Gather label counts
+        all_label_counts = []
+        for uid in uids:
+            counts = self.client_raw_stats.get(uid, {}).get('label_counts', {})
+            # Convert to vector of size output_channels
+            vec = np.zeros(self.args.output_channels)
+            for l, c in counts.items():
+                if int(l) < self.args.output_channels:
+                    vec[int(l)] = c
+            all_label_counts.append(vec)
+        
+        all_label_counts = np.array(all_label_counts)
+        group_sum = np.sum(all_label_counts, axis=0)
+        group_dist = group_sum / (np.sum(group_sum) + 1e-8)
+        
+        dist_scores = []
+        for vec in all_label_counts:
+            p_k = vec / (np.sum(vec) + 1e-8)
+            # RMSE
+            rmse = np.sqrt(np.mean((p_k - group_dist)**2))
+            dist_scores.append(np.exp(-5.0 * rmse)) # lambda=5.0
+            
+        # Combine
+        final_weights = []
+        for i in range(len(uids)):
+            w = data_sizes[i] * dist_scores[i]
+            final_weights.append(w)
+            
+        return final_weights
+
     def aggregate_all_uav_models_locally(self, interaction_mode: str) -> Optional[Dict[str, Any]]:
         with self.sfl_results_lock:
             if not self.client_final_model_buffer:
@@ -842,7 +1026,12 @@ class EdgeServer(Communicator):
                     if not uids_in_group: continue
                     client_states = [self.client_final_model_buffer[uid] for uid in uids_in_group]
                     server_states = [self.server_final_model_buffer[uid] for uid in uids_in_group]
-                    intra_group_weights = [self.client_raw_stats.get(uid, {}).get('data_size', 1) for uid in uids_in_group]
+                    
+                    if self.args.test_policy == 'MHR-SFL':
+                        intra_group_weights = self._calculate_mhr_weights(uids_in_group)
+                    else:
+                        intra_group_weights = [self.client_raw_stats.get(uid, {}).get('data_size', 1) for uid in uids_in_group]
+                        
                     avg_client_state = self.average_state_dicts(client_states, weights=intra_group_weights)
                     avg_server_state = self.average_state_dicts(server_states, weights=intra_group_weights)
 
@@ -865,7 +1054,15 @@ class EdgeServer(Communicator):
                         continue
                     
                     recombined_models_from_groups.append(recombined_state_for_group)
-                    group_total_weight = sum(intra_group_weights)
+                    
+                    # [MHR-SFL Correction] 
+                    # Intra-group aggregation uses MHR weights (Data * Consistency).
+                    # Inter-group aggregation uses pure Data Volume sum.
+                    if self.args.test_policy == 'MHR-SFL':
+                        group_total_weight = sum([self.client_raw_stats.get(uid, {}).get('data_size', 1) for uid in uids_in_group])
+                    else:
+                        group_total_weight = sum(intra_group_weights)
+                        
                     final_aggregation_weights.append(group_total_weight)
                     self.logger.info(f"Successfully recombined model for group with SP={sp}, total weight={group_total_weight}.")
 
@@ -884,6 +1081,36 @@ class EdgeServer(Communicator):
                         self.logger.error(f"Invalid tensor values (NaN or Inf) found in FINAL aggregated state at key: '{k}'. Aggregation failed.")
                         return None
                 
+                # [MHR-SFL] 聚合本地原型 (Aggregate Local Prototypes)
+                if self.args.test_policy == 'MHR-SFL':
+                    agg_proto_sums = {}
+                    agg_proto_counts = {}
+                    
+                    for res in self.sfl_interaction_results_buffer:
+                        if res['status'] != 'success': continue
+                        
+                        local_protos = res.get('local_prototypes', {})
+                        label_counts = res.get('label_counts', {})
+                        
+                        for cls_id, mean_vec in local_protos.items():
+                            # label_counts keys might be int, ensure consistency
+                            count = label_counts.get(int(cls_id), 0)
+                            if count == 0: continue
+                            
+                            if cls_id not in agg_proto_sums:
+                                agg_proto_sums[cls_id] = torch.zeros_like(mean_vec)
+                                agg_proto_counts[cls_id] = 0
+                            
+                            agg_proto_sums[cls_id] += mean_vec * count
+                            agg_proto_counts[cls_id] += count
+                            
+                    self.aggregated_local_prototypes = {}
+                    for cls_id, sum_vec in agg_proto_sums.items():
+                        if agg_proto_counts[cls_id] > 0:
+                            self.aggregated_local_prototypes[cls_id] = sum_vec / agg_proto_counts[cls_id]
+                    
+                    self.logger.info(f"[MHR-SFL] Aggregated local prototypes for {len(self.aggregated_local_prototypes)} classes.")
+
                 self.logger.info(f"Successfully performed final aggregation across {len(recombined_models_from_groups)} groups.")
                 return final_aggregated_state
                 
@@ -916,6 +1143,12 @@ class EdgeServer(Communicator):
                     self.anchor_model_state_from_cloud = {k: v.cpu() for k, v in cloud_decision.get('anchor_model_state', {}).items()} if cloud_decision.get('anchor_model_state') else None
                     self.macro_policy_package_from_cloud = cloud_decision.get('macro_policy_package', self.macro_policy_package_from_cloud)
                     
+                    # [MHR-SFL] 接收全局原型
+                    if 'global_prototypes' in cloud_decision and cloud_decision['global_prototypes']:
+                        self.global_prototypes = {k: v.to(self.device) for k, v in cloud_decision['global_prototypes'].items()}
+                    else:
+                        self.global_prototypes = None
+
                     if 'model_state_dict' not in cloud_decision:
                         self.logger.error("Invalid config from cloud: missing model state.")
                         return False, 0
@@ -963,13 +1196,22 @@ class EdgeServer(Communicator):
         if payload_content is None:
             self.logger.warning(f"No aggregated content ({payload_key}) to report. Sending empty update.")
             payload_content = {}
+            
+        # [MHR-SFL] 上报本地原型
+        local_protos_to_send = None
+        if self.test_policy == 'MHR-SFL' and self.aggregated_local_prototypes:
+            local_protos_to_send = {k: v.cpu() for k, v in self.aggregated_local_prototypes.items()}
 
         with self.client_data_lock:
             num_active_clients = len(self.client_socket_dict)
             
         msg_to_cloud = {
             'edge_id': self.edge_id,
-            'model_payload': {payload_key: payload_content, 'kpi_report': final_kpi_report},
+            'model_payload': {
+                payload_key: payload_content, 
+                'kpi_report': final_kpi_report,
+                'local_prototypes': local_protos_to_send # [MHR-SFL]
+            },
             'next_edge_state': {'num_active_clients': num_active_clients, 'kpi_report': final_kpi_report}
         }
         

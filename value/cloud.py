@@ -186,7 +186,7 @@ class CloudTimeSyncAgent:
 
     def get_all_actions(self, states_data: dict, active_edge_ids: list) -> dict:
         # 对于非MAPPO策略，返回固定值
-        if self.args.test_policy not in ['HAC-SFL', 'MADRL-SFL']:
+        if self.args.test_policy not in ['HAC-SFL', 'MADRL-SFL', 'MHR-SFL']:
             return {eid: self.n_base for eid in active_edge_ids}
         
         if not states_data:
@@ -385,7 +385,8 @@ class CloudServer(Communicator):
                     'current_global_round': self.global_round,
                     'anchor_model_state': anchor_state_for_edge,
                     'macro_policy_package': macro_policy_package,
-                    'sfl_lr': macro_policy_package.get('current_sfl_lr')
+                    'sfl_lr': macro_policy_package.get('current_sfl_lr'),
+                    'global_prototypes': getattr(self, 'global_prototypes', None) # [MHR-SFL] 下发全局类原型
                 }
 
                 if self.send_msg(sock, message_to_edge, 'MSG_CLOUD_DECISION_TO_EDGE'):
@@ -402,6 +403,10 @@ class CloudServer(Communicator):
         
         received_payloads, received_states = [], {}
         successful_edges = set()
+        
+        # [MHR-SFL] 收集所有 Edge 上传的本地原型
+        all_local_prototypes = []
+        
         while not results_queue.empty():
             result = results_queue.get()
             edge_id = result['edge_id']
@@ -409,9 +414,19 @@ class CloudServer(Communicator):
                 successful_edges.add(edge_id)
                 response = result['data']
                 if 'model_payload' in response and response['model_payload']:
-                    received_payloads.append({'edge_id': edge_id, 'payload': response['model_payload']})
+                    payload = response['model_payload']
+                    received_payloads.append({'edge_id': edge_id, 'payload': payload})
+                    
+                    # [MHR-SFL] 提取本地原型
+                    if 'local_prototypes' in payload:
+                        all_local_prototypes.append(payload['local_prototypes'])
+                        
                 if 'next_edge_state' in response:
                     received_states[edge_id] = response['next_edge_state']
+        
+        # [MHR-SFL] 聚合更新全局原型
+        if self.args.test_policy == 'MHR-SFL' and all_local_prototypes:
+            self._update_global_prototypes(all_local_prototypes)
         
         failed_edges = set(edges_in_this_round) - successful_edges
         if failed_edges:
@@ -420,6 +435,35 @@ class CloudServer(Communicator):
                 self._handle_disconnected_edge(edge_id, "Did not report back successfully.")
 
         return received_payloads, received_states
+    
+    def _update_global_prototypes(self, all_local_prototypes: list):
+        """
+        [MHR-SFL] 聚合来自各个 Edge 的本地原型以更新全局原型。
+        采用简单的平均策略。
+        """
+        if not all_local_prototypes: return
+        
+        # 假设原型是一个字典 {class_id: prototype_vector}
+        # 或者是一个 Tensor [num_classes, feature_dim]
+        # 这里为了通用性，假设是字典形式
+        
+        new_global_protos = {}
+        counts = {}
+        
+        for local_protos in all_local_prototypes:
+            for cls_id, proto_vec in local_protos.items():
+                if cls_id not in new_global_protos:
+                    new_global_protos[cls_id] = torch.zeros_like(proto_vec)
+                    counts[cls_id] = 0
+                new_global_protos[cls_id] += proto_vec
+                counts[cls_id] += 1
+                
+        for cls_id in new_global_protos:
+            if counts[cls_id] > 0:
+                new_global_protos[cls_id] /= counts[cls_id]
+                
+        self.global_prototypes = new_global_protos
+        self.logger.info(f"[MHR-SFL] Updated global prototypes for {len(new_global_protos)} classes.")
 
     def _broadcast_round_complete_signal(self):
         self.logger.info("[Cloud] Broadcasting 'ROUND_COMPLETE' signal to all edges...")

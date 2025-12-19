@@ -6,6 +6,7 @@
 
 # --- 实验维度定义 ---
 # 您可以在这里添加或删除想要测试的项
+# 数据集/客户端场景/策略配置
 datasets_to_test=('cifar10')
 client_scenarios_to_test=(10) # 客户端数量场景
 policies_to_test=('FedAvg_Baseline' 'SplitFed' 'ARES' 'RAF-SFL')
@@ -118,7 +119,7 @@ for dataset in "${datasets_to_test[@]}"; do
                     ${DIST_FLAG} --test_policy ${policy} ${OTHER_ARGS[*]}"
                 
                 # [核心逻辑] 如果是需要加载模型的算法，动态构建模型路径
-                if [[ "$policy" == "HAC-SFL" || "$policy" == "MADRL-SFL" ]]; then
+                if [[ "$policy" == "HAC-SFL" || "$policy" == "MADRL-SFL" || "$policy" == "MHR-SFL" ]]; then
                     # 根据配置规则，自动推断模型应该存放的路径
                     if [ "$num_clients" -eq 20 ]; then
                         if [ "$DIR_NAME" = "non-iid" ]; then
